@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Pytest
+.pytest_cache/
+
+# Virtual environments
+.venv/
+.venv_local_backup/
+.venv_master_backup/
