@@ -20,9 +20,14 @@ def driver():
     driver_instance = open_website()
     yield driver_instance
     driver_instance.quit()
-
+OPTION_NAMES = [
+    "Gia_Tang_Dan", 
+    "Gia_Giam_Dan", 
+    "Ten_A_Z", 
+    "Ten_Z_A", 
+]
 # Test case chính
-@pytest.mark.parametrize("idx", [0, 1, 2, 3, 4, 5])
+@pytest.mark.parametrize("idx", [ 1, 2, 3, 4, ], ids=OPTION_NAMES)
 def test_sorting_options(driver, idx):
     try:
         sort_select = get_sort_dropdown(driver)

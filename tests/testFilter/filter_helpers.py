@@ -172,4 +172,4 @@ def run_test(category: str, data: list) -> str:
     if category == "name_asc": return "PASS" if is_sorted_vi(data, reverse=False) else "FAIL"
     if category == "name_desc": return "PASS" if is_sorted_vi(data, reverse=True) else "FAIL"
     
-    return "SKIP"
+    #return "SKIP"

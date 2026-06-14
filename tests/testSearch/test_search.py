@@ -37,8 +37,8 @@ if not logger.handlers:
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
-
-@pytest.mark.parametrize("case", TEST_CASES)
+test_names = [case["name"] for case in TEST_CASES]
+@pytest.mark.parametrize("case", TEST_CASES, ids=test_names)
 def test_search_multiple_cases(driver, case):
     wait = WebDriverWait(driver, 15)
     logger.info("=== START case: %s ===", case["name"])
