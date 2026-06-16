@@ -5,6 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+from tests.test_pdp_advanced import extract_number
+
 PRODUCT_URL = "https://icondenim.com/products/ao-thun-nam-seminal-form-boxy"
 
 @pytest.fixture(autouse=True, scope="module")
@@ -30,6 +32,10 @@ def test_tc_pdp_004_chuyen_doi_tab_thong_tin(driver):
         time.sleep(0.5)
         driver.execute_script("arguments[0].click();", tab_delivery)
         time.sleep(0.5)
+        panel_active = wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, ".tab-pane.active, .tab-content .active")
+        ))
+        assert panel_active.text.strip() != "", "Nội dung tab không hiển thị"
     except Exception:
         pytest.skip("Giao diện không có cấu trúc Tab truyền thống để test.")
 
@@ -73,6 +79,8 @@ def test_tc_pdp_007_thay_doi_bien_the_size(driver):
             time.sleep(1) 
             driver.execute_script("arguments[0].click();", target_label)
             time.sleep(1) 
+            class_attr = target_label.get_attribute("class") 
+            assert "sd" in class_attr.split(), "Size không được chọn "
         else:
              pytest.skip("Sản phẩm không có nhiều tuỳ chọn Size/Màu để đổi.")
     except Exception as e:
@@ -82,10 +90,20 @@ def test_tc_pdp_012_bat_loi_quen_chon_size(driver):
     wait = WebDriverWait(driver, 10)
     driver.get(PRODUCT_URL)
     time.sleep(1.5)
+    try:
+        badge = driver.find_element(By.CSS_SELECTOR, "span.number-cart")
+        initial_count = extract_number(badge.text)
+    except:
+        initial_count = 0
     btn_add = wait.until(EC.presence_of_element_located((By.XPATH, "//button[@id='add-to-cart'] | //button[contains(., 'THÊM VÀO GIỎ')]")))
     driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", btn_add)
     driver.execute_script("arguments[0].click();", btn_add)
     time.sleep(2)
+    badge_after = driver.find_element(By.CSS_SELECTOR, "span.number-cart")
+    final_count = extract_number(badge_after.text)
+    
+    assert final_count == initial_count + 1, \
+        f"Giỏ hàng không tăng"
 
 def test_tc_pdp_013_them_vao_gio_hang(driver):
     wait = WebDriverWait(driver, 10)
@@ -95,9 +113,18 @@ def test_tc_pdp_013_them_vao_gio_hang(driver):
         time.sleep(0.5)
     except:
         pass
+    try:
+        badge = driver.find_element(By.CSS_SELECTOR, "span.number-cart")
+        initial_count = extract_number(badge.text)
+    except:
+        initial_count = 0
     btn_add = wait.until(EC.presence_of_element_located((By.XPATH, "//button[@id='add-to-cart'] | //button[contains(., 'THÊM VÀO GIỎ')]")))
     driver.execute_script("arguments[0].click();", btn_add)
     time.sleep(3)
+    badge_after = driver.find_element(By.CSS_SELECTOR, "span.number-cart")
+    final_count = extract_number(badge_after.text)
+    assert final_count == initial_count + 1, \
+        f"Giỏ hàng không tăng"
 
 def test_tc_pdp_014_mua_ngay_chuyen_huong(driver):
     wait = WebDriverWait(driver, 10)
