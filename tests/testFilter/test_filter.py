@@ -14,7 +14,6 @@ from tests.testFilter.filter_helpers import (
     run_test
 )
 
-# Setup và Teardown trình duyệt
 @pytest.fixture
 def driver():
     driver_instance = open_website()
@@ -26,13 +25,12 @@ OPTION_NAMES = [
     "Ten_A_Z", 
     "Ten_Z_A", 
 ]
-# Test case chính
+
 @pytest.mark.parametrize("idx", [ 1, 2, 3, 4, ], ids=OPTION_NAMES)
 def test_sorting_options(driver, idx):
     try:
         sort_select = get_sort_dropdown(driver)
         
-        # 1. Bỏ qua nếu index test vượt quá số dòng thực tế trong dropdown
         if idx >= len(sort_select.options):
             pytest.skip(f"Dropdown không có phần tử tại index {idx}")
 
@@ -42,7 +40,6 @@ def test_sorting_options(driver, idx):
 
         category = classify_option(option_text, option_value)
 
-        # 2. Xử lý logic Skip
         if category == "skip":
             pytest.skip(f"Bỏ qua tuỳ chọn mặc định/không hỗ trợ: {option_text}")
 
@@ -59,11 +56,6 @@ def test_sorting_options(driver, idx):
 
         result = run_test(category, data)
 
-        # 3. Quản lý lỗi đã biết (Bug giá giảm dần/tăng dần)
-        # if result != "PASS" and "price" in category:
-        #     pytest.xfail(f"Bug website đã biết: Lỗi logic sort tại '{option_text}'")
-
-        # 4. Đánh giá Pass/Fail trực tiếp không cần mảng errors
         assert result == "PASS", f"FAIL: Dữ liệu sắp xếp sai tại tuỳ chọn '{option_text}'"
 
     except (TimeoutException, NoSuchElementException) as exc:
