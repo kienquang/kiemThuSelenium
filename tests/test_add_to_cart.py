@@ -28,7 +28,7 @@ SIZE_CHECKED_CSS = "div[data-option-index='1'] input[name='option2']:checked"
 
 @pytest.fixture(scope="function")
 def wait(driver):
-    """Cấu hình bộ quản lý thời gian chờ Explicit Wait (Tối đa 12s)"""
+    """Cấu hình bộ quản lý thời gian chờ (Tối đa 12s)"""
     return WebDriverWait(driver, 12)
 
 def swatch_in_option(option_index: int) -> str:
@@ -293,7 +293,7 @@ class TestAddToCart:
 
     # ADD_06 - số âm bằng DevTools
     def test_add_06_negative_quantity_bypass(self, driver, wait):
-        print("\n[ADD_14] Thử nghiệm xuyên thủng UI bằng số âm (XSS/JS Injection)")
+        print("\n[ADD_06] Thử nghiệm thêm số âm bằng DevTools")
         driver.get(PRODUCT_URL)
         
         input_qty = wait.until(EC.presence_of_element_located((By.ID, QTY_INPUT_ID)))

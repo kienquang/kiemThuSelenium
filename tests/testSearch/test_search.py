@@ -10,7 +10,6 @@ from selenium.common.exceptions import (
     UnexpectedAlertPresentException,
 )
 
-# Import từ các file đã chia
 from tests.testSearch.test_data import TEST_CASES
 from tests.testSearch.search_helpers import (
     BASE_URL,
@@ -44,16 +43,13 @@ def test_search_multiple_cases(driver, case):
     logger.info("=== START case: %s ===", case["name"])
     logger.debug("Query: '%s' | Expected: %s", case["query"], case["expected"])
 
-    # ── Step 0: Flush any stale alert left by the previous test case ─────────
     _dismiss_any_alert(driver)
 
-    # ── Step 1: Navigate to a clean page ─────────────────────────────────────
     driver.get(BASE_URL)
     driver.delete_all_cookies()
     wait.until(lambda d: d.find_element(By.TAG_NAME, "body").is_displayed())
     _scroll_to_top(driver)
 
-    # ── Step 2: Open the search panel ────────────────────────────────────────
     search_button = _find_first_clickable(driver, wait, SEARCH_BUTTON_LOCATORS, "search button")
     time.sleep(0.5)
     driver.execute_script("arguments[0].click();", search_button)
@@ -63,7 +59,6 @@ def test_search_multiple_cases(driver, case):
     _focus_input(driver, search_input)
     _clear_input(search_input)
 
-    # ── Step 3: Type query character-by-character, watching for alerts ────────
     outcome = None
     elements = []
 
@@ -77,7 +72,6 @@ def test_search_multiple_cases(driver, case):
     else:
         alert_fired = False
 
-    # ── Step 4: Submit & wait for outcome (only when no mid-typing alert) ─────
     if outcome is None:
         try:
             search_input.send_keys(Keys.ENTER)
@@ -102,12 +96,10 @@ def test_search_multiple_cases(driver, case):
                     _capture_debug_artifacts(driver, case["name"])
                     raise
 
-    # ── Step 5: Assert ────────────────────────────────────────────────────────
     assert outcome in case["expected"], (
         f"[{case['name']}] Expected one of {case['expected']}, got '{outcome}'"
     )
 
-    # ── Step 6: Secondary UI check on the results page ────────────────────────
     _dismiss_any_alert(driver)
 
     try:
@@ -130,7 +122,6 @@ def test_search_multiple_cases(driver, case):
         except TimeoutException as exc:
             logger.warning("Results page UI check skipped (timeout): %s", exc)
 
-    # ── Step 7: Log final result ──────────────────────────────────────────────
     if outcome == "results":
         logger.info("[PASSED] %s result items found.", len(elements))
     elif outcome == "no_results":
@@ -138,6 +129,5 @@ def test_search_multiple_cases(driver, case):
     else:
         logger.info("[PASSED] Validation behaviour confirmed.")
 
-    # ── Step 8: Final safety flush before next test ───────────────────────────
     _dismiss_any_alert(driver)
     time.sleep(1)

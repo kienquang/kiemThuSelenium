@@ -1,6 +1,3 @@
-# ==========================================
-# helpers.py
-# ==========================================
 
 import re
 import time
@@ -17,13 +14,7 @@ from tests.testFilter.constants import *
 SPECIAL_MAP = {'đ': 'd', 'Đ': 'd'}
 
 def vi_sort_key(text: str) -> str:
-    """
-    Mô phỏng cách Shopify sort tên sản phẩm:
-    1. Lowercase
-    2. Map 'đ' → 'd' (vì NFKD không tách được đ)
-    3. NFKD decompose → bỏ combining marks (bỏ hết dấu)
-    Kết quả: string ASCII thuần để sort lexicographic
-    """
+
     text = str(text).lower().strip()
     text = ''.join(SPECIAL_MAP.get(c, c) for c in text)
     text = unicodedata.normalize('NFKD', text)
@@ -42,7 +33,6 @@ def is_sorted_vi(data: list[str], reverse: bool = False) -> bool:
     return True
 def open_website() -> webdriver.Chrome:
     options = Options()
-    #options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
@@ -74,7 +64,7 @@ def get_first_item_text(driver: webdriver.Chrome, is_price_sort: bool) -> str:
     return els[0].text.strip() if els else ""
 
 def wait_for_sort_completed(driver: webdriver.Chrome, prev_text: str, is_price_sort: bool) -> None:
-    time.sleep(4)
+
     wait = WebDriverWait(driver, PAGE_LOAD_TIMEOUT, poll_frequency=0.4,
                          ignored_exceptions=[StaleElementReferenceException])
     try:
@@ -134,7 +124,6 @@ def get_names(driver: webdriver.Chrome) -> list[str]:
             try:
                 name_el = block.find_element(By.CSS_SELECTOR, NAME_TEXT_CSS)
                 raw = name_el.text.strip()
-                # Normalize NFC trước khi lưu để đảm bảo Unicode nhất quán
                 normalized = unicodedata.normalize('NFC', raw.lower())
                 names.append(normalized)
             except NoSuchElementException:
@@ -172,4 +161,3 @@ def run_test(category: str, data: list) -> str:
     if category == "name_asc": return "PASS" if is_sorted_vi(data, reverse=False) else "FAIL"
     if category == "name_desc": return "PASS" if is_sorted_vi(data, reverse=True) else "FAIL"
     
-    #return "SKIP"
