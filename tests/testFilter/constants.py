@@ -1,5 +1,5 @@
 
-URL = "https://icondenim.com/collections/tat-ca-san-pham"
+URL = "https://icondenim.com/collections/ao-thun"
 PAGE_LOAD_TIMEOUT = 30
 
 
@@ -12,8 +12,7 @@ PRICE_SPAN_CSS    = "div.box-pro-prices p.pro-price span"
 NAME_TEXT_CSS     = "h3.pro-name a" 
 
 
-PRICE_ASC_KEYWORDS  = ["price-ascending", "price asc", "low to high", "tăng dần"]
-PRICE_DESC_KEYWORDS = ["price-descending", "price desc", "high to low", "giảm dần"]
-
-NAME_ASC_KEYWORDS   = ["title-ascending", "name asc", "a-z", "từ a-z"]
-NAME_DESC_KEYWORDS  = ["title-descending", "name desc", "z-a", "từ z-a"]
+PRICE_ASC_VALUE  = "price-ascending"
+PRICE_DESC_VALUE = "price-descending"
+NAME_ASC_VALUE   = "title-ascending"
+NAME_DESC_VALUE  = "title-descending"

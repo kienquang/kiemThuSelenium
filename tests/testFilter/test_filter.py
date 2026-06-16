@@ -26,7 +26,7 @@ OPTION_NAMES = [
     "Ten_Z_A", 
 ]
 
-@pytest.mark.parametrize("idx", [ 1, 2, 3, 4, ], ids=OPTION_NAMES)
+@pytest.mark.parametrize("idx", [ 1, 2, 3, 4], ids=OPTION_NAMES)
 def test_sorting_options(driver, idx):
     try:
         sort_select = get_sort_dropdown(driver)

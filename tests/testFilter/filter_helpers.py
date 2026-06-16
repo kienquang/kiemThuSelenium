@@ -131,14 +131,12 @@ def get_names(driver: webdriver.Chrome) -> list[str]:
     return names
 
 def classify_option(option_text: str, option_value: str) -> str:
-    if not option_value:
-        return "skip"
-    combined = (option_text + " " + option_value).lower()
+    val = str(option_value).strip().lower()
     
-    if any(kw in combined for kw in PRICE_ASC_KEYWORDS): return "price_asc"
-    if any(kw in combined for kw in PRICE_DESC_KEYWORDS): return "price_desc"
-    if any(kw in combined for kw in NAME_ASC_KEYWORDS): return "name_asc"
-    if any(kw in combined for kw in NAME_DESC_KEYWORDS): return "name_desc"
+    if val == PRICE_ASC_VALUE:  return "price_asc"
+    if val == PRICE_DESC_VALUE: return "price_desc"
+    if val == NAME_ASC_VALUE:   return "name_asc"
+    if val == NAME_DESC_VALUE:  return "name_desc"
     
     return "skip"
 
