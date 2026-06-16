@@ -293,7 +293,7 @@ class TestAddToCart:
 
     # ADD_06 - số âm bằng DevTools
     def test_add_06_negative_quantity_bypass(self, driver, wait):
-        print("\n[ADD_14] Thử nghiệm thêm số âm bằng DevTools")
+        print("\n[ADD_06] Thử nghiệm thêm số âm bằng DevTools")
         driver.get(PRODUCT_URL)
         
         input_qty = wait.until(EC.presence_of_element_located((By.ID, QTY_INPUT_ID)))
