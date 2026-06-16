@@ -1,5 +1,10 @@
 import logging
 import os
+import unicodedata
+from selenium.common.exceptions import (
+    NoSuchElementException, 
+    StaleElementReferenceException
+)
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -208,3 +213,28 @@ def _type_with_alert_watch(driver, input_el, query, alert_wait_secs=0.3):
             return True, alert_text
 
     return False, None
+def _get_result_product_names(driver) -> list[str]:
+    names = []
+    
+    # 1. Đợi danh sách sản phẩm hiển thị trên trang kết quả
+    # (RESULT_ITEM_LOCATORS của bạn là: (By.CSS_SELECTOR, ".content-product-list.product-list > div"))
+    WebDriverWait(driver, 15).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, ".content-product-list.product-list > div"))
+    )
+    product_blocks = driver.find_elements(By.CSS_SELECTOR, ".content-product-list.product-list > div")
+
+    # 2. Duyệt qua từng khối sản phẩm riêng biệt để cô lập phạm vi tìm kiếm
+    for block in product_blocks:
+        if block.is_displayed():
+            try:
+                # Sử dụng selector chính xác tuyệt đối lấy từ hàm chạy thành công của bạn
+                name_el = block.find_element(By.CSS_SELECTOR, "h3.pro-name a")
+                raw = name_el.text.strip()
+                if raw:
+                    normalized = unicodedata.normalize('NFC', raw.lower())
+                    names.append(normalized)
+            except (NoSuchElementException, StaleElementReferenceException):
+                # Bỏ qua nếu block lỗi DOM hoặc không có thẻ tên phù hợp
+                continue
+                
+    return names
