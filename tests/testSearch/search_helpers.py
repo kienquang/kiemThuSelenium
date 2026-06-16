@@ -15,7 +15,7 @@ BASE_URL = "https://icondenim.com/"
 
 logger = logging.getLogger(__name__)
 
-# ── Locator definitions ─────────────────────────────────────────
+
 SEARCH_BUTTON_LOCATORS = [
     (By.CSS_SELECTOR, "a.search.toggle_form_search"),
 ]
@@ -43,7 +43,7 @@ VALIDATION_LOCATORS = [
     (By.XPATH, "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'please enter')]"),
 ]
 
-# ── Shared helpers ───────────────────────────────────────────────────────────
+
 
 def _locator_to_str(locator):
     return f"{locator[0]} -> {locator[1]}"
