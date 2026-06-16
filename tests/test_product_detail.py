@@ -31,7 +31,7 @@ def test_tc_pdp_004_chuyen_doi_tab_thong_tin(driver):
         driver.execute_script("arguments[0].click();", tab_delivery)
         time.sleep(0.5)
     except Exception:
-        pytest.skip("Giao diện không có cấu trúc tab truyền thống để test.")
+        pytest.skip("Giao diện không có cấu trúc Tab truyền thống để test.")
 
 def test_tc_pdp_005_tang_so_luong(driver):
     wait = WebDriverWait(driver, 10)
@@ -44,7 +44,7 @@ def test_tc_pdp_005_tang_so_luong(driver):
         driver.execute_script("arguments[0].click();", btn_plus)
         time.sleep(0.5)
         qty_value = int(input_qty.get_attribute("value"))
-        assert qty_value >= 3, f" Nút Tăng Số Lượng (+) không hoạt động! (Giá trị hiện tại: {qty_value})"
+        assert qty_value >= 3, f"BUG UI: Nút Tăng Số Lượng (+) không hoạt động! (Giá trị hiện tại: {qty_value})"
     except Exception as e:
         pytest.fail(f"Lỗi tương tác nút (+): {e}")
 
@@ -57,7 +57,7 @@ def test_tc_pdp_006_giam_so_luong_am(driver):
              driver.execute_script("arguments[0].click();", btn_minus)
              time.sleep(0.2)
         qty_value_after = int(input_qty.get_attribute("value"))
-        assert qty_value_after >= 1, " Nút Giảm (-) cho phép hạ xuống số âm!"
+        assert qty_value_after >= 1, "BUG BẢO MẬT: Nút Giảm (-) cho phép hạ xuống số âm!"
     except Exception as e:
         pytest.fail(f"Lỗi: {e}")
 
@@ -137,6 +137,6 @@ def test_tc_pdp_data_driven_quantity_input(driver, invalid_input):
     current_value = input_qty.get_attribute("value")
     try:
         numeric_value = int(current_value)
-        assert numeric_value >= 1, f"Web nhận số lượng = {numeric_value}"
+        assert numeric_value >= 1, f"BUG BẢO MẬT: Web nhận số lượng = {numeric_value}"
     except ValueError:
-        pytest.fail(f"Ô số lượng đang cho phép nhập chữ: '{current_value}'")
+        pytest.fail(f"BUG UI: Ô số lượng đang cho phép nhập chữ/ký tự: '{current_value}'")
