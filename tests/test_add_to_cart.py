@@ -1,4 +1,3 @@
-# ====================== TEST ADD TO CART ======================
 import pytest
 from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -7,9 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException, InvalidElementStateException
 
-# ==========================================
-# CENTRALIZED CONFIGURATION & LOCATORS
-# ==========================================
+
 PRODUCT_URL = "https://icondenim.com/products/ao-thun-nam-seminal-form-boxy"
 
 QTY_INPUT_ID = "quantity"
@@ -38,25 +35,21 @@ def swatch_in_option(option_index: int) -> str:
     return f"div[data-option-index='{option_index}'] .n-sd.swatch-element"
 
 class TestAddToCart:
-    # =========================================================
-    # ADD_01 - Thêm 1 sản phẩm (Kiểm chứng qua Data State)
-    # =========================================================
+
+    # ADD_01 - Thêm 1 sản phẩm 
     def test_add_01_add_single_product_to_cart(self, driver, wait):
         print("\n[ADD_01] Thêm 1 sản phẩm vào giỏ hàng")
         driver.get(PRODUCT_URL)
         
-        # 1. Trích xuất trạng thái gốc của giỏ hàng TRƯỚC KHI thao tác
         try:
             badge_text = driver.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()
             initial_count = int(badge_text) if badge_text.isdigit() else 0
         except NoSuchElementException:
             initial_count = 0
             
-        # 2. Phát lệnh tương tác
         btn_add = wait.until(EC.element_to_be_clickable((By.XPATH, BTN_ADD_CART_XPATH)))
         driver.execute_script("arguments[0].click();", btn_add)
         
-        # 3. Explicit Wait: Giám sát State-Mutation trên bong bóng giỏ hàng
         def is_cart_updated(d):
             try:
                 current_text = d.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()
@@ -68,22 +61,19 @@ class TestAddToCart:
         
         final_count = int(driver.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip())
         assert final_count > initial_count, f"Lỗi Đồng Bộ: Giỏ hàng không nảy số (Initial: {initial_count}, Final: {final_count})"
-        print(f"   ✓ Xác thực: Bong bóng giỏ hàng đã cập nhật số lượng ({initial_count} → {final_count}).")
-    # =========================================================
+        print(f" Bong bóng giỏ hàng đã cập nhật số lượng ({initial_count} → {final_count}).")
+
     # ADD_02 - Thêm số lượng lớn sản phẩm vào giỏ
-    # =========================================================
     def test_add_02_add_large_quantity_to_cart(self, driver, wait):
         print("\n[ADD_02] Thêm số lượng lớn vào giỏ")
         driver.get(PRODUCT_URL)
         
-        # 1. Thu thập trạng thái gốc
         try:
             badge_text = driver.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()
             initial_count = int(badge_text) if badge_text.isdigit() else 0
         except NoSuchElementException:
             initial_count = 0
 
-        # 2. Bơm số lượng vào input
         input_qty = wait.until(EC.presence_of_element_located((By.ID, QTY_INPUT_ID)))
         btn_plus = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, BTN_PLUS_CSS)))
         
@@ -97,11 +87,9 @@ class TestAddToCart:
 
         added_qty = int(driver.find_element(By.ID, QTY_INPUT_ID).get_attribute("value"))  
         
-        # 3. Kích hoạt thêm giỏ hàng
         btn_add = driver.find_element(By.XPATH, BTN_ADD_CART_XPATH)
         driver.execute_script("arguments[0].click();", btn_add)
         
-        # 4. Giám sát rẽ nhánh: Đợi tổng số lượng giỏ hàng bằng đúng (Gốc + Thêm mới)
         expected_final_count = initial_count + added_qty
         
         def is_exact_cart_updated(d):
@@ -112,10 +100,9 @@ class TestAddToCart:
                 return False
 
         wait.until(is_exact_cart_updated)
-        print(f"   ✓ Xác thực: Dữ liệu giỏ hàng hội tụ chính xác tuyệt đối (Tổng: {expected_final_count}).")
-    # =========================================================
-    # ADD_03 - Thêm số lượng vượt tồn kho (Bắt Validation Error)
-    # =========================================================
+        print(f"(Tổng: {expected_final_count}).")
+   
+    # ADD_03 - Thêm số lượng vượt tồn kho 
     def test_add_03_add_over_stock_limit(self, driver, wait):
         print("\n[ADD_05] Thử thêm số lượng vượt tồn kho")
         driver.get(PRODUCT_URL)
@@ -127,11 +114,10 @@ class TestAddToCart:
         driver.execute_script("arguments[0].click();", btn_add)
         
         error_msg = wait.until(EC.visibility_of_element_located((By.XPATH, TOAST_ERROR_XPATH)))
-        assert error_msg.is_displayed(), "Lỗi Backend: Không có màng lọc chặn vượt tồn kho."
-        print("   ✓ Xác thực: Cơ chế phòng vệ tồn kho được kích hoạt.")
-    # =========================================================
+        assert error_msg.is_displayed(), "Lỗi: không chặn vượt tồn kho."
+        print(" Backend đã chặn số lượng vượt tồn kho. ")
+
     # ADD_04 - Không cho giảm dưới 1
-    # =========================================================
     def test_add_04_quantity_not_less_than_one(self, driver, wait):
         print("\n[ADD_04] Không cho giảm dưới 1")
         driver.get(PRODUCT_URL)
@@ -143,22 +129,16 @@ class TestAddToCart:
             driver.execute_script("arguments[0].click();", driver.find_element(By.CSS_SELECTOR, BTN_MINUS_CSS))
             wait.until(lambda d: int(d.find_element(By.ID, QTY_INPUT_ID).get_attribute("value")) >= 1)
 
-        final_qty = int(driver.find_element(By.ID, QTY_INPUT_ID).get_attribute("value"))  # ✅ re-find
-        assert final_qty == 1, f"BUG: Số lượng sụt giảm phi logic (hiện tại: {final_qty})"
-        
-    # =========================================================
-    # ADD_05 - Thêm vào giỏ hàng khi thay đổi thuộc tính sản phẩm
-    # =========================================================
+        final_qty = int(driver.find_element(By.ID, QTY_INPUT_ID).get_attribute("value"))  
+        assert final_qty == 1, f" số lượng bị giảm xuống dưới 1 (hiện tại: {final_qty})"
 
+    # ADD_05 - Thêm vào giỏ hàng khi thay đổi thuộc tính sản phẩm
     def test_add_05_add_to_cart_with_changed_variant(self, driver, wait):
 
         print("\n[ADD_05] Thêm vào giỏ hàng khi thay đổi thuộc tính sản phẩm")
 
         driver.get(PRODUCT_URL)
 
-        # ─────────────────────────────────────────────
-        # 1. Lấy badge giỏ hàng ban đầu
-        # ─────────────────────────────────────────────
         try:
             badge_text = driver.find_element(
                 By.CSS_SELECTOR,
@@ -176,18 +156,12 @@ class TestAddToCart:
 
         print(f"   -> Badge ban đầu: {initial_count}")
 
-        # ─────────────────────────────────────────────
-        # 2. Chờ swatch size xuất hiện
-        # ─────────────────────────────────────────────
         wait.until(
             EC.presence_of_all_elements_located(
                 (By.CSS_SELECTOR, SIZE_SWATCH_CSS)
             )
         )
 
-        # ─────────────────────────────────────────────
-        # 3. Lấy size mặc định
-        # ─────────────────────────────────────────────
         try:
             checked_radio = driver.find_element(
                 By.CSS_SELECTOR,
@@ -198,7 +172,6 @@ class TestAddToCart:
 
         except NoSuchElementException:
 
-            # fallback nếu chưa checked
             first_radio = driver.find_element(
                 By.CSS_SELECTOR,
                 SIZE_RADIO_CSS
@@ -208,9 +181,6 @@ class TestAddToCart:
 
         print(f"   -> Size mặc định: {default_size}")
 
-        # ─────────────────────────────────────────────
-        # 4. Tìm size khác mặc định
-        # ─────────────────────────────────────────────
         all_swatches = driver.find_elements(
             By.CSS_SELECTOR,
             SIZE_SWATCH_CSS
@@ -239,9 +209,6 @@ class TestAddToCart:
             "Không tìm được size khả dụng khác."
         )
 
-        # ─────────────────────────────────────────────
-        # 5. Lấy radio + label
-        # ─────────────────────────────────────────────
         target_radio = target_swatch.find_element(
             By.CSS_SELECTOR,
             "input[type='radio']"
@@ -252,17 +219,11 @@ class TestAddToCart:
             "label"
         )
 
-        # ─────────────────────────────────────────────
-        # 6. Scroll tới size
-        # ─────────────────────────────────────────────
         driver.execute_script(
             "arguments[0].scrollIntoView({block:'center'});",
             target_label
         )
 
-        # ─────────────────────────────────────────────
-        # 7. CLICK THẬT bằng Selenium
-        # ─────────────────────────────────────────────
         wait.until(
             EC.element_to_be_clickable(target_label)
         )
@@ -271,9 +232,6 @@ class TestAddToCart:
 
         print(f"   -> Đã click size: {selected_size}")
 
-        # ─────────────────────────────────────────────
-        # 8. Chờ radio thực sự selected
-        # ─────────────────────────────────────────────
         wait.until(
             lambda d: target_radio.is_selected()
         )
@@ -283,25 +241,16 @@ class TestAddToCart:
             f"'{selected_size}' đã selected"
         )
 
-        # ─────────────────────────────────────────────
-        # 9. Re-find nút Add To Cart
-        # ─────────────────────────────────────────────
         btn_add = wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, BTN_ADD_CART_XPATH)
             )
         )
 
-        # ─────────────────────────────────────────────
-        # 10. Click Add To Cart
-        # ─────────────────────────────────────────────
         btn_add.click()
 
         print("   -> Đã click Thêm vào giỏ")
 
-        # ─────────────────────────────────────────────
-        # 11. Chờ badge tăng
-        # ─────────────────────────────────────────────
         def is_cart_updated(d):
 
             try:
@@ -321,9 +270,6 @@ class TestAddToCart:
 
         wait.until(is_cart_updated)
 
-        # ─────────────────────────────────────────────
-        # 12. Assert cuối
-        # ─────────────────────────────────────────────
         final_count = int(
             driver.find_element(
                 By.CSS_SELECTOR,
@@ -339,39 +285,34 @@ class TestAddToCart:
         )
 
         print(
-            f"   ✓ Xác thực: "
+            f"  đã Xác thực: "
             f"Size '{selected_size}' "
             f"đã được thêm vào giỏ hàng "
             f"({initial_count} → {final_count})"
         )
-    # =========================================================
-    # ADD_06 - Bypass số âm bằng DevTools (Backend Validation Hook)
-    # =========================================================
+
+    # ADD_06 - số âm bằng DevTools
     def test_add_06_negative_quantity_bypass(self, driver, wait):
         print("\n[ADD_14] Thử nghiệm xuyên thủng UI bằng số âm (XSS/JS Injection)")
         driver.get(PRODUCT_URL)
         
         input_qty = wait.until(EC.presence_of_element_located((By.ID, QTY_INPUT_ID)))
         
-        # Ép nhập dữ liệu phi pháp thông qua JS (Bỏ qua màng lọc Read-only của HTML)
         driver.execute_script("arguments[0].value='-10';", input_qty)
         
         btn_add = wait.until(EC.element_to_be_clickable((By.XPATH, BTN_ADD_CART_XPATH)))
         driver.execute_script("arguments[0].click();", btn_add)
         
-        # Đánh chặn Toast Error báo lỗi hệ thống
         error_msg = wait.until(EC.visibility_of_element_located((By.XPATH, TOAST_ERROR_XPATH)))
-        assert error_msg.is_displayed(), "Lỗi Nghiêm Trọng (Vulnerability): Backend chấp nhận nạp số lượng âm."
-        print("   ✓ Xác thực: Lớp phòng thủ Backend đã chặn đứng request phi logic.")
+        assert error_msg.is_displayed(), "Lỗi: Backend chấp nhận nạp số lượng âm."
+        print(" Backend đã chặn số lượng âm ")
 
-    # =========================================================
-    # ADD_07 - Bypass vượt tồn kho (Xác thực ngược: Đảm bảo Data không đổi)
-    # =========================================================
+
+    # ADD_07 - vượt tồn kho bằng DevTools
     def test_add_07_bypass_over_stock_quantity(self, driver, wait):
         print("\n[ADD_15] Thử nghiệm ép tải Database bằng số lượng cực đại")
         driver.get(PRODUCT_URL)
         
-        # Lấy mốc tham chiếu
         try:
             badge_text = driver.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()
             initial_count = int(badge_text) if badge_text.isdigit() else 0
@@ -384,13 +325,10 @@ class TestAddToCart:
         btn_add = wait.until(EC.element_to_be_clickable((By.XPATH, BTN_ADD_CART_XPATH)))
         driver.execute_script("arguments[0].click();", btn_add)
         
-        # Kiểm chứng an ninh: Đợi 2 giây để đảm bảo API từ chối, số lượng KHÔNG TĂNG LÊN
         try:
             wait_short = WebDriverWait(driver, 2)
             wait_short.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()) > initial_count)
-            # Nếu lọt qua được cửa này, nghĩa là web bị lủng lỗi bảo mật
-            raise AssertionError("Lỗi Nghiêm Trọng: Backend chấp nhận đơn hàng vượt tồn kho và đã nảy số.")
+            raise AssertionError("Lỗi: Backend chấp nhận đơn hàng vượt tồn kho.")
         except TimeoutException:
-            # Đây là kết quả kỳ vọng: Quá thời gian nhưng số không nảy
-            print("   ✓ Xác thực: Lớp phòng thủ Backend vô hiệu hóa luồng nạp dữ liệu ảo.")
+            print("  Backend đã chặn số lượng vượt tồn kho. ")
             

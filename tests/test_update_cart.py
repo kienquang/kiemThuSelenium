@@ -6,9 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, InvalidElementStateException
 
-# ==========================================
-# CENTRALIZED CONFIGURATION & LOCATORS
-# ==========================================
 PRODUCT_URL = "https://icondenim.com/products/quan-jeans-nam-ong-suong-scar-form-straight-1"
 PRODUCT_URL_2 = "https://icondenim.com/products/ao-thun-nam-flux-form-regular"
 CART_URL = "https://icondenim.com/cart"
@@ -18,12 +15,10 @@ PRODUCT_BTN_MINUS_CSS = "input.qtyminus"
 PRODUCT_ADD_TO_CART_XPATH = "//button[@id='add-to-cart'] | //button[contains(translate(., 'thêm vào giỏ', 'THÊM VÀO GIỎ'), 'THÊM VÀO GIỎ')]"
 PRODUCT_VARIANT_XPATH = "//div[contains(@class, 'swatch-element')]//label | //div[contains(@class, 'select-swap')]//label"
 
-# Tọa độ Giỏ hàng (Đã cập nhật theo DOM thực tế từ DevTools)
 CART_QTY_INPUT_CSS = "#quantity_cart"
 CART_BTN_PLUS_CSS = ".btn-right-quantity"
 CART_BTN_MINUS_CSS = ".btn-left-quantity"
 
-# Tọa độ chốt chặn trạng thái
 CART_BADGE_CSS = ".js-number-cart-new"
 MODAL_ERROR_CSS = "#modal-error"
 
@@ -32,16 +27,14 @@ REMOVE_BTN_XPATH = "//span[@class='remove-wrap']/a[i[contains(@class, 'fa-times'
 
 @pytest.fixture(scope="function")
 def driver():
-    # 1. Giai đoạn Setup (Khởi tạo)
+
     options = webdriver.ChromeOptions()
-    # (Thêm các options của bạn ở đây...)
     driver = webdriver.Chrome(options=options)
     driver.maximize_window()
     
-    # 2. Cấp phát driver cho bài test thực thi
     yield driver 
     
-    # 3. Giai đoạn Teardown (Dọn dẹp) - Chạy SAU khi test xong (dù Pass hay Fail)
+    # Dọn dẹp - Chạy SAU khi test xong
     print("\n[Teardown] Xóa toàn bộ Cookies và LocalStorage để làm sạch Session...")
     driver.get(CART_URL)
     driver.delete_all_cookies()
@@ -55,9 +48,7 @@ def wait(driver):
 
 class TestCartUpdate:
 
-    # =========================================================
-    # Helper Functions (Giữ nguyên luồng tách biệt của bạn)
-    # =========================================================
+    # Helper Functions
     def _wait_for_document_ready(self, driver, wait):
         wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
 
@@ -188,53 +179,6 @@ class TestCartUpdate:
 
         raise last_error
 
-        driver.get(target_url)
-        self._wait_for_document_ready(driver, wait)
-        try:
-            initial_badge = self._safe_get_badge_count(driver)
-            self._select_first_variant_if_present(driver)
-            self._set_product_quantity(driver, wait, quantity)
-
-            btn_add = wait.until(
-                EC.element_to_be_clickable((By.XPATH, PRODUCT_ADD_TO_CART_XPATH))
-            )
-            driver.execute_script("arguments[0].click();", btn_add)
-
-            wait.until(
-                lambda d, old_count=initial_badge:
-                self._safe_get_badge_count(d) > old_count
-            )
-
-            self._go_to_cart(driver, wait)
-            wait.until(
-                lambda d, expected=quantity:
-                self._safe_parse_int(
-                    d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value"),
-                    default=0
-                ) == expected
-            )
-            print(f"   [Helper] ÄÃ£ náº¡p chÃ­nh xÃ¡c {quantity} sáº£n pháº©m vÃ o Session.")
-            return
-        except Exception as e:
-            print(f"   [Helper Error] Setup tiá»n Ä‘iá»u kiá»‡n tháº¥t báº¡i: {e}")
-            raise
-
-        """Thêm sản phẩm vào giỏ hàng với số lượng chỉ định qua JS"""
-        driver.get(PRODUCT_URL)
-        try:
-            qty_input = wait.until(EC.presence_of_element_located((By.ID, "quantity")))
-            driver.execute_script(f"arguments[0].value='{quantity}';", qty_input)
-            
-            btn_add = wait.until(EC.element_to_be_clickable((By.XPATH, "//button[@id='add-to-cart'] | //button[contains(translate(., 'thêm vào giỏ', 'THÊM VÀO GIỎ'), 'THÊM VÀO GIỎ')]")))
-            driver.execute_script("arguments[0].click();", btn_add)
-            
-            # Đổi thành == để kiểm soát chặt chẽ trạng thái khởi tạo
-            wait.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip() or 0) == quantity)
-            print(f"   [Helper] Đã nạp chính xác {quantity} sản phẩm vào Session.")
-        except Exception as e:
-            print(f"   [Helper Error] Setup tiền điều kiện thất bại: {e}")
-            raise  # Nên raise lỗi để dừng test ngay nếu tiền điều kiện fail
-
     def _go_to_cart(self, driver, wait):
         """
         Truy cập trang cart và chờ cart render hoàn chỉnh.
@@ -242,19 +186,15 @@ class TestCartUpdate:
 
         driver.get(CART_URL)
 
-        # ===== WAIT PAGE LOAD =====
         self._wait_for_document_ready(driver, wait)
         self._wait_for_cart_overlay_to_clear(driver)
 
-        # ===== WAIT CART UI RENDER =====
-        # Chờ ít nhất 1 quantity input xuất hiện
         wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
             )
         )
 
-        # ===== WAIT INPUT VALUE STABLE =====
         wait.until(
             lambda d:
             d.find_element(
@@ -264,7 +204,7 @@ class TestCartUpdate:
         )
         self._wait_for_cart_overlay_to_clear(driver)
 
-        print("   ✓ Cart render hoàn chỉnh")
+        print("Cart render xong")
 
     def _add_multiple_products(self, driver, wait):
         product_urls = [
@@ -301,7 +241,6 @@ class TestCartUpdate:
 
         driver.get(CART_URL)
 
-        # Chờ page load
         wait.until(
             lambda d:
             d.execute_script(
@@ -311,7 +250,6 @@ class TestCartUpdate:
 
         try:
 
-            # Loop đến khi cart trống
             while True:
 
                 remove_buttons = driver.find_elements(
@@ -319,7 +257,6 @@ class TestCartUpdate:
                     REMOVE_BTN_XPATH
                 )
 
-                # Không còn item
                 if not remove_buttons:
                     break
 
@@ -330,22 +267,20 @@ class TestCartUpdate:
                     target
                 )
 
-                # Chờ item biến mất khỏi DOM
                 wait.until(
                     EC.staleness_of(target)
                 )
 
                 print("   -> Đã xóa 1 item")
 
-            print("   ✓ Cart đã sạch")
+            print("Cart đã sạch")
 
         except Exception as e:
 
             print(f"   [Reset Warning] {e}")
 
-    # =========================================================
+
     # UPDATE_01 - Tăng số lượng 1 lần
-    # =========================================================
     def test_update_01_increase_quantity_once(self, driver, wait):
         print("\n[UPDATE_01] Tăng số lượng sản phẩm trong giỏ 1 lần")
         self._add_product_to_cart(driver, wait, quantity=1)
@@ -357,16 +292,14 @@ class TestCartUpdate:
         btn_plus = driver.find_element(By.CSS_SELECTOR, CART_BTN_PLUS_CSS)
         driver.execute_script("arguments[0].click();", btn_plus)
 
-        # Chờ biến đổi trạng thái: Input value phải = old_qty + 1
         wait.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value")) == expected_new_qty)
         
         new_qty = int(qty_input.get_attribute("value"))
         assert new_qty == expected_new_qty, f"Expected {expected_new_qty}, got {new_qty}"
-        print(f"   ✓ Tăng số lượng thành công: {old_qty} → {new_qty}")
+        print(f"ăng số lượng thành công: {old_qty} → {new_qty}")
 
-    # =========================================================
+
     # UPDATE_02 - Tăng số lượng nhiều lần
-    # =========================================================
     def test_update_02_increase_quantity_multiple(self, driver, wait):
         print("\n[UPDATE_02] Tăng số lượng nhiều lần")
         self._add_product_to_cart(driver, wait, quantity=1)
@@ -377,23 +310,20 @@ class TestCartUpdate:
         for _ in range(3):
             driver.execute_script("arguments[0].click();", btn_plus)
 
-        # Chờ trạng thái hội tụ sau vòng lặp
         wait.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value")) == 4)
         
         final_qty = int(driver.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value"))
         assert final_qty == 4
-        print(f"   ✓ Tăng nhiều lần thành công → {final_qty}")
+        print(f"Tăng nhiều lần thành công → {final_qty}")
 
-    # =========================================================
+
     # UPDATE_03 - Tăng số lượng vượt tồn kho
-    # =========================================================
     def test_update_03_increase_over_stock(self, driver, wait):
 
         try:
 
             print("\n[UPDATE_03] Tăng số lượng vượt tồn kho")
 
-            # ===== PRE-CONDITION =====
             self._add_product_to_cart(driver, wait, quantity=1)
 
             self._go_to_cart(driver, wait)
@@ -418,7 +348,6 @@ class TestCartUpdate:
 
             out_of_stock_detected = False
 
-            # ===== USER BEHAVIOR FLOW =====
             for attempt in range(max_attempts):
 
                 qty_input = wait.until(
@@ -442,13 +371,11 @@ class TestCartUpdate:
                     )
                 )
 
-                # ===== CLICK PLUS =====
                 driver.execute_script(
                     "arguments[0].click();",
                     btn_plus
                 )
 
-                # ===== WAIT AJAX CART UPDATE =====
                 try:
 
                     wait.until(
@@ -462,7 +389,6 @@ class TestCartUpdate:
                 except Exception:
                     pass
 
-                # ===== CHECK OUT OF STOCK LABEL =====
                 try:
 
                     out_of_stock_msg = WebDriverWait(
@@ -477,7 +403,7 @@ class TestCartUpdate:
                     assert "Hết hàng" in out_of_stock_msg.text
 
                     print(
-                        "   ✓ Hệ thống đã hiển thị "
+                        "Hệ thống đã hiển thị"
                         "nhãn 'Hết hàng'"
                     )
 
@@ -487,7 +413,6 @@ class TestCartUpdate:
 
                 except TimeoutException:
 
-                    # ===== VERIFY QUANTITY INCREASE =====
                     try:
 
                         wait.until(
@@ -510,7 +435,7 @@ class TestCartUpdate:
                         previous_valid_qty = new_qty
 
                         print(
-                            f"   ✓ Quantity tăng: "
+                            f"Quantity tăng: "
                             f"{old_qty} -> {new_qty}"
                         )
 
@@ -522,7 +447,6 @@ class TestCartUpdate:
                             "'Hết hàng'"
                         )
 
-            # ===== FINAL ASSERTION =====
             if not out_of_stock_detected:
 
                 pytest.fail(
@@ -530,7 +454,6 @@ class TestCartUpdate:
                     f"nhưng không phát hiện hết hàng"
                 )
 
-            # ===== VERIFY SERVER STATE =====
             print(
                 "   -> Refresh để xác thực "
                 "server state..."
@@ -562,7 +485,7 @@ class TestCartUpdate:
             # )
 
             print(
-                f"   ✓ Server giữ đúng "
+                f"Server giữ đúng "
                 f"quantity hợp lệ cuối cùng: "
                 f"{final_qty}"
             )
@@ -602,11 +525,10 @@ class TestCartUpdate:
                 )
 
                 print(
-                    "   ✓ Cleanup thành công"
+                    " Cleanup thành công "
                 )
-    # =========================================================
+
     # UPDATE_04 - Giảm số lượng 1 lần
-    # =========================================================
     def test_update_04_decrease_quantity_once(self, driver, wait):
         print("\n[UPDATE_04] Giảm số lượng 1 lần")
         self._add_product_to_cart(driver, wait, quantity=3)
@@ -618,16 +540,14 @@ class TestCartUpdate:
         btn_minus = driver.find_element(By.CSS_SELECTOR, CART_BTN_MINUS_CSS)
         driver.execute_script("arguments[0].click();", btn_minus)
 
-        # Chờ biến đổi trạng thái lùi
         wait.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value")) == old_qty - 1)
 
         new_qty = int(driver.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value"))
         assert new_qty == old_qty - 1
-        print(f"   ✓ Giảm số lượng thành công: {old_qty} → {new_qty}")
+        print(f" Giảm số lượng thành công: {old_qty} → {new_qty}")
 
-    # =========================================================
+
     # UPDATE_05 - Giảm số lượng nhiều lần
-    # =========================================================
     def test_update_05_decrease_quantity_multiple(self, driver, wait):
         print("\n[UPDATE_05] Giảm số lượng nhiều lần")
         self._add_product_to_cart(driver, wait, quantity=5)
@@ -638,13 +558,11 @@ class TestCartUpdate:
         for _ in range(3):
             driver.execute_script("arguments[0].click();", btn_minus)
 
-        # Chờ trạng thái hội tụ lùi
         wait.until(lambda d: int(d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value")) == 2)
-        print("   ✓ Giảm nhiều lần thành công")
+        print(" Giảm nhiều lần thành công")
 
-    # =========================================================
-    # UPDATE_06 - Không cho giảm dưới 1 (Kiểm chứng qua Data State bong bóng)
-    # =========================================================
+
+    # UPDATE_06 - Không cho giảm dưới 1
     def test_update_06_not_less_than_one(self, driver, wait):
         print("\n[UPDATE_06] Không cho phép giảm số lượng dưới 1 (Kiểm chứng qua Input & Badge)")
         self._add_product_to_cart(driver, wait, quantity=1)
@@ -653,65 +571,48 @@ class TestCartUpdate:
         qty_input = driver.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
         btn_minus = driver.find_element(By.CSS_SELECTOR, CART_BTN_MINUS_CSS)
 
-        # 1. Hành động: Cố tình click nút giảm khi số lượng đang là mốc biên (1)
         driver.execute_script("arguments[0].click();", btn_minus)
 
-        # 2. Xử lý chờ hệ thống phản hồi (DOM/API)
-        # Trong trường hợp UI disable nút hoặc API trả về lỗi 4xx chặn giảm, 
-        # ta cần một khoảng nghỉ cực ngắn để chắc chắn hệ thống ĐÃ bỏ qua lệnh thay đổi.
-        # Sử dụng WebdriverWait để chốt chặn giá trị input vẫn phải là '1' (Ngay cả khi DOM render lại)
         wait.until(lambda d: d.find_element(By.CSS_SELECTOR, CART_QTY_INPUT_CSS).get_attribute("value") == "1")
 
-        # 3. Chốt chặn xác nhận kép (Double-Entry Verification)
-        # Xác nhận 1: Ô input số lượng không bị tụt xuống 0 hoặc âm
         current_qty = int(qty_input.get_attribute("value"))
-        assert current_qty == 1, f"Lỗi nghiêm trọng: Số lượng bị giảm xuống {current_qty} thay vì giữ nguyên ở mức 1"
+        assert current_qty == 1, f"Lỗi: Số lượng bị giảm xuống {current_qty} thay vì giữ nguyên ở mức 1"
 
-        # Xác nhận 2: Bong bóng giỏ hàng (Cart Badge) vẫn giữ nguyên trạng thái có hàng
         cart_badge_text = driver.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip()
         assert int(cart_badge_text or 0) == 1, f"Lỗi: Bong bóng giỏ hàng bị mất hoặc sai số lượng ({cart_badge_text})"
 
-        print("  ✓ Cố gắng giảm dưới 1 bị chặn lại, số lượng và giỏ hàng vẫn giữ nguyên.")
+        print("Cố gắng giảm dưới 1 bị chặn lại, số lượng và giỏ hàng vẫn giữ nguyên.")
 
-    # =========================================================
+
     # UPDATE_07 - Reload sau khi sửa 1 sản phẩm
-    # =========================================================
     def test_update_07_reload_after_update(self, driver, wait):
         print("\n[UPDATE_07] Reload sau khi sửa số lượng (Khắc phục Flaky)")
         self._add_product_to_cart(driver, wait, quantity=1)
         self._go_to_cart(driver, wait)
 
-        # 1. Bắt lấy giá trị Tổng hàng TRƯỚC khi click
         line_badge_element = driver.find_element(By.CSS_SELECTOR,CART_BADGE_CSS)
         old_badge_text = line_badge_element.text.strip()
 
-        # 2. Thực hiện thao tác thay đổi
         btn_plus = driver.find_element(By.CSS_SELECTOR, CART_BTN_PLUS_CSS)
         driver.execute_script("arguments[0].click();", btn_plus)
         
-        # 3. ĐỒNG BỘ CẤP ĐỘ SERVER: 
-        # Chờ cho đến khi đoạn Text của Tổng tiền thay đổi khác với lúc đầu.
-        # Sự thay đổi này là bằng chứng thép cho việc API đã đi vòng qua Server và trả về thành công.
+
         wait.until(lambda d: d.find_element(By.CSS_SELECTOR, CART_BADGE_CSS).text.strip() != old_badge_text)
 
         driver.refresh()
         
-        # 4. ĐỒNG BỘ SAU REFRESH (Xử lý Hydration của SPA)
         wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
         
-        # Chờ phần tử xuất hiện VÀ không còn bị dính trạng thái Stale (bị hủy diệt rồi render lại)
         qty_input = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, CART_QTY_INPUT_CSS)))
         
-        # 5. Xác nhận tính bền vững
         assert int(qty_input.get_attribute("value")) == 2
-        print("  ✓ Reload thành công: Dữ liệu được bảo toàn bền vững từ Database")
-    # =========================================================
+        print(" Reload thành công ")
+
+
     # 8 - Reload sau khi sửa nhiều sản phẩm
-    # =========================================================
     def test_update_08_reload_after_update_multiple_products(self, driver, wait):
         print("\n[UPDATE_08] Reload sau khi sửa nhiều sản phẩm")
 
-        # ===== PRE-CONDITION =====
         self._add_multiple_products(driver, wait)
         self._go_to_cart(driver, wait)
 
@@ -727,7 +628,6 @@ class TestCartUpdate:
 
         print(f"   -> Tìm thấy {len(qty_inputs)} sản phẩm trong cart")
 
-        # ===== HELPER =====
         def get_qty_inputs():
             return driver.find_elements(By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
 
@@ -758,12 +658,10 @@ class TestCartUpdate:
             wait.until(quantities_match)
             self._wait_for_cart_overlay_to_clear(driver)
 
-        # ===== UPDATE MULTIPLE PRODUCTS =====
         expected_quantities = []
 
         for index in range(2):
 
-            # ✅ Re-find mỗi lần lặp để tránh stale
             initial_qty = int(
                 get_qty_inputs()[index].get_attribute("value")
             )
@@ -778,14 +676,13 @@ class TestCartUpdate:
 
             for _ in range(increase_times):
 
-                # ✅ Re-find trước mỗi lần click
                 old_qty = int(
                     get_qty_inputs()[index].get_attribute("value")
                 )
 
                 driver.execute_script(
                     "arguments[0].click();",
-                    get_btn_plus_list()[index]  # ✅ Re-find btn trước mỗi click
+                    get_btn_plus_list()[index]  
                 )
                 self._wait_for_cart_overlay_to_clear(driver)
 
@@ -810,13 +707,12 @@ class TestCartUpdate:
                 f"{expected_qty}"
             )
 
-        # ===== VERIFY BEFORE REFRESH =====
         wait_for_quantities_stable(expected_quantities)
 
         for index in range(2):
 
             current_qty = int(
-                get_qty_inputs()[index].get_attribute("value")  # ✅ Re-find
+                get_qty_inputs()[index].get_attribute("value")  
             )
 
             assert current_qty == expected_quantities[index], (
@@ -827,7 +723,6 @@ class TestCartUpdate:
 
         print("   -> Xác nhận quantity trước refresh thành công")
 
-        # ===== REFRESH =====
         driver.refresh()
 
         wait.until(
@@ -838,11 +733,10 @@ class TestCartUpdate:
         self._wait_for_cart_overlay_to_clear(driver)
         wait_for_quantities_stable(expected_quantities)
 
-        # ===== VERIFY SERVER STATE =====
         for index in range(2):
 
             final_qty = int(
-                get_qty_inputs()[index].get_attribute("value")  # ✅ Re-find
+                get_qty_inputs()[index].get_attribute("value")  
             )
 
             assert final_qty == expected_quantities[index], (
@@ -852,14 +746,14 @@ class TestCartUpdate:
             )
 
             print(
-                f"   ✓ Product {index + 1} giữ đúng quantity: "
+                f" Product {index + 1} giữ đúng quantity: "
                 f"{final_qty}"
             )
 
-        print("   ✓ Reload giữ nguyên số lượng của nhiều sản phẩm") 
-    # =========================================================
+        print(" Reload giữ nguyên số lượng của nhiều sản phẩm") 
+
+
     # UPDATE_09 - Không cho nhập trực tiếp
-    # =========================================================
     def test_update_09_prevent_typing_quantity(self, driver, wait):
         print("\n[UPDATE_09] Không cho nhập trực tiếp vào ô số lượng")
         self._add_product_to_cart(driver, wait, quantity=1)
@@ -872,12 +766,11 @@ class TestCartUpdate:
             qty_input.send_keys("999")
             assert qty_input.get_attribute("value") == original, "Cho phép nhập tay"
         except InvalidElementStateException:
-            pass # Thẻ readonly chặn send_keys
-        print("   ✓ Không cho phép nhập trực tiếp")
+            pass 
+        print(" Không cho phép nhập trực tiếp")
 
-    # =========================================================
+
     # UPDATE_10 - Không cho paste
-    # =========================================================
     def test_update_10_prevent_paste_quantity(self, driver, wait):
         print("\n[UPDATE_10] Không cho paste vào ô số lượng")
         self._add_product_to_cart(driver, wait, quantity=1)
@@ -891,27 +784,22 @@ class TestCartUpdate:
             assert qty_input.get_attribute("value") == original, "Cho phép paste"
         except InvalidElementStateException:
             pass
-        print("   ✓ Không cho phép paste")
+        print(" Không cho phép paste")
 
-    # =========================================================
-    # UPDATE_11 - Bypass số âm bằng DevTools (Xác thực qua Server)
-    # =========================================================
+
+    # UPDATE_11 - Bypass số âm bằng DevTools
     def test_update_11_bypass_negative_quantity(self, driver, wait):
         print("\n[UPDATE_11] Bypass số lượng âm bằng DevTools")
 
-        # ===== PRE-CONDITION =====
         self._add_product_to_cart(driver, wait, quantity=1)
         self._go_to_cart(driver, wait)
 
-        # Chờ cart render hoàn chỉnh
         qty_input = wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
             )
         )
 
-        # ===== BYPASS UI VALIDATION =====
-        # Inject số âm + trigger event để sync React/Vue state
         driver.execute_script("""
             arguments[0].value = '-5';
 
@@ -926,7 +814,6 @@ class TestCartUpdate:
 
         print("   -> Đã inject quantity = -5")
 
-        # ===== KÍCH HOẠT UPDATE FLOW =====
         btn_plus = wait.until(
             EC.element_to_be_clickable(
                 (By.CSS_SELECTOR, CART_BTN_PLUS_CSS)
@@ -938,8 +825,6 @@ class TestCartUpdate:
             btn_plus
         )
 
-        # ===== ĐỒNG BỘ FRONTEND =====
-        # Đợi frontend phản hồi sau khi click
         wait.until(
             lambda d:
             d.find_element(
@@ -950,10 +835,8 @@ class TestCartUpdate:
 
         print("   -> Front-end đã phản hồi")
 
-        # ===== REFRESH ĐỂ LẤY SERVER STATE =====
         driver.refresh()
 
-        # Chờ browser load xong
         wait.until(
             lambda d:
             d.execute_script(
@@ -961,49 +844,41 @@ class TestCartUpdate:
             ) == "complete"
         )
 
-        # Chờ cart render lại ổn định sau refresh
         final_qty_input = wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
             )
         )
 
-        # ===== VERIFY SERVER STATE =====
         final_qty = int(
             final_qty_input.get_attribute("value")
         )
 
-        # SECURITY ASSERTION:
-        # Backend tuyệt đối không được persist số âm
         assert final_qty >= 0, (
-            f"LỖI BẢO MẬT: "
+            f"LỖI: "
             f"Server đã lưu quantity âm vào Database. "
             f"Giá trị hiện tại: {final_qty}"
         )
 
         print(
-            f"   ✓ Server đã từ chối/sanitize dữ liệu âm. "
+            f"Server đã từ chối dữ liệu âm. "
             f"Quantity hiện tại: {final_qty}"
         )
-    # =========================================================
-    # UPDATE_12 - Bypass vượt tồn kho bằng DevTools (Xác thực qua Server)
-    # =========================================================
+
+
+    # UPDATE_12 - Bypass vượt tồn kho bằng DevTools
     def test_update_12_bypass_over_stock(self, driver, wait):
         print("\n[UPDATE_12] Bypass số lượng vượt tồn kho bằng DevTools")
 
-        # ===== PRE-CONDITION =====
         self._add_product_to_cart(driver, wait, quantity=1)
         self._go_to_cart(driver, wait)
 
-        # Chờ cart render ổn định
         qty_input = wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
             )
         )
 
-        # ===== BYPASS UI VALIDATION =====
-        # Inject số lượng cực lớn + sync React/Vue state
         driver.execute_script("""
             arguments[0].value = '99999';
 
@@ -1018,7 +893,6 @@ class TestCartUpdate:
 
         print("   -> Đã inject quantity = 99999")
 
-        # ===== KÍCH HOẠT UPDATE FLOW =====
         btn_plus = wait.until(
             EC.element_to_be_clickable(
                 (By.CSS_SELECTOR, CART_BTN_PLUS_CSS)
@@ -1030,8 +904,6 @@ class TestCartUpdate:
             btn_plus
         )
 
-        # ===== ĐỒNG BỘ FRONTEND =====
-        # Modal lỗi là bằng chứng API round-trip đã hoàn tất
         error_msg = wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, MODAL_ERROR_CSS)
@@ -1044,10 +916,8 @@ class TestCartUpdate:
 
         print("   -> Modal lỗi đã xuất hiện")
 
-        # ===== REFRESH ĐỂ LẤY SERVER STATE =====
         driver.refresh()
 
-        # Chờ browser load hoàn tất
         wait.until(
             lambda d:
             d.execute_script(
@@ -1055,27 +925,23 @@ class TestCartUpdate:
             ) == "complete"
         )
 
-        # Chờ cart render ổn định sau refresh
         final_qty_input = wait.until(
             EC.visibility_of_element_located(
                 (By.CSS_SELECTOR, CART_QTY_INPUT_CSS)
             )
         )
 
-        # ===== VERIFY SERVER STATE =====
         final_qty = int(
             final_qty_input.get_attribute("value")
         )
 
-        # SECURITY ASSERTION:
-        # Backend tuyệt đối không được persist quantity rác
         assert final_qty < 99999, (
-            "LỖI BẢO MẬT: "
+            "LỖI: "
             "Server đã lưu quantity vượt tồn kho vào Database! "
             f"Giá trị hiện tại: {final_qty}"
         )
 
         print(
-            f"   ✓ Server đã từ chối/sanitize dữ liệu vượt tồn kho. "
+            f" Server đã từ chối dữ liệu vượt tồn kho. "
             f"Quantity hiện tại: {final_qty}"
         )
